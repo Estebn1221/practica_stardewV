@@ -2,13 +2,14 @@ import pygame
 from settings import *
 from player import Player
 from overlay import Overlay
-from sprites import Generic
+from sprites import Generic, Water
+from pytmx.util_pygame import load_pygame
+from support import *
 
 class Level:
     def __init__(self):
         # obtiene la display surface
         self.display_surface = pygame.display.get_surface() #obtiene las dims de la surface de main
-        
         # sprite groups
         self.all_sprites = CameraGroup()
         
@@ -17,6 +18,23 @@ class Level:
         
      
     def  setup(self):
+        tmx_data = load_pygame('c:/Users/esteb/OneDrive/Email attachments/Documents/Proyectos/Programacion/juego_stardewV/data/map.tmx')
+        for layer in ['HouseFloor', 'HouseFurnitureBottom','HouseWalls', 'HouseFurnitureTop', 'Fence']:
+            for x, y, surf in tmx_data.get_layer_by_name(layer).tiles():
+                if layer == 'HouseFloor' or layer == 'HouseFurnitureBottom': #house
+                    Generic((x*TITLE_SIZE, y*TITLE_SIZE), surf, self.all_sprites, LAYERS['house bottom'])
+                elif layer == 'HouseWalls' or layer == 'HouseFurnitureTop': 
+                    Generic((x*TITLE_SIZE, y*TITLE_SIZE), surf, self.all_sprites, LAYERS['main'])
+                else: #fence
+                    Generic((x*TITLE_SIZE, y*TITLE_SIZE), surf, self.all_sprites, LAYERS['main'])
+        # Water  
+        water_frames = import_folder('c:/Users/esteb/OneDrive/Email attachments/Documents/Proyectos/Programacion/juego_stardewV//graphics/water')
+        for x, y, surf in tmx_data.get_layer_by_name('Water').tiles():
+            Water((x*TITLE_SIZE, y*TITLE_SIZE), water_frames, self.all_sprites)             
+                    
+        # Crear al jugador
+        self.player = Player((500, 500), self.all_sprites)
+        
         # Crear otros sprites y elementos
         Generic(
             pos = (0,0),
@@ -24,8 +42,7 @@ class Level:
             groups = self.all_sprites,
             z = LAYERS['ground'])
         
-        # Crear al jugador
-        self.player = Player((350, 200), self.all_sprites)
+        
     
     def run(self, dt): #deltaTime para independencia de frames
         self.display_surface.fill('black')
@@ -48,7 +65,6 @@ class CameraGroup(pygame.sprite.Group): ##Nota: Ver video de cameras
         posicion, y que muestre la mitad del ancho de pantalla, y la mitad de la altura de pantalla."""
         self.offset.x = player.rect.centerx - SCREEN_WIDTH/2
         self.offset.y = player.rect.centery - SCREEN_HEIGHT/2
-        
         for layer in LAYERS.values():
             for sprite in self.sprites(): # metodo
                 """Esto es lo que le suele pasar a un grupo para
